@@ -15,10 +15,6 @@ interface DateRangePickerProps {
   onChange: (range: DateRange) => void;
 }
 
-const presets: { label: string; range: { start: string | null; end: string | null } }[] = [
-  { label: "All Time", range: { start: null, end: null } },
-];
-
 function getDateRange(daysAgo: number): { start: string; end: string } {
   const end = new Date();
   const start = subDays(end, daysAgo);

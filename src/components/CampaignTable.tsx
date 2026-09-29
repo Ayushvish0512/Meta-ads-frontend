@@ -3,7 +3,12 @@
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Search, ArrowUpDown } from "lucide-react";
 import type { Campaign } from "@/types";
-import { formatCurrency, formatNumber, formatPercent, truncate } from "@/lib/utils";
+import {
+  formatCurrency,
+  formatCompactNumber,
+  formatPercent,
+  truncate,
+} from "@/lib/utils";
 
 interface CampaignTableProps {
   campaigns: Campaign[];
@@ -13,7 +18,11 @@ interface CampaignTableProps {
 type SortKey = keyof Campaign;
 type SortOrder = "asc" | "desc";
 
-const VISIBLE_COLUMNS: { key: SortKey; label: string; render?: (c: Campaign) => React.ReactNode }[] = [
+const VISIBLE_COLUMNS: {
+  key: SortKey;
+  label: string;
+  render?: (c: Campaign) => React.ReactNode;
+}[] = [
   { key: "campaign_name", label: "Campaign" },
   { key: "date_stop", label: "Date" },
   {
@@ -24,16 +33,21 @@ const VISIBLE_COLUMNS: { key: SortKey; label: string; render?: (c: Campaign) => 
   {
     key: "impressions",
     label: "Impr.",
-    render: (c) => <span className="text-right">{formatNumber(c.impressions)}</span>,
+    render: (c) => <span className="text-right">{formatCompactNumber(c.impressions)}</span>,
   },
   {
     key: "clicks",
     label: "Clicks",
-    render: (c) => <span className="text-right">{formatNumber(c.clicks)}</span>,
+    render: (c) => <span className="text-right">{formatCompactNumber(c.clicks)}</span>,
+  },
+  {
+    key: "unique_clicks",
+    label: "Uniq. Clicks",
+    render: (c) => <span className="text-right">{formatCompactNumber(c.unique_clicks)}</span>,
   },
   {
     key: "ctr",
-    label: "CTR (%)",
+    label: "CTR",
     render: (c) => <span className="text-right">{formatPercent(c.ctr)}</span>,
   },
   {
@@ -42,9 +56,31 @@ const VISIBLE_COLUMNS: { key: SortKey; label: string; render?: (c: Campaign) => 
     render: (c) => <span className="text-right">{formatCurrency(c.cpc)}</span>,
   },
   {
+    key: "cpp",
+    label: "CPP",
+    render: (c) => <span className="text-right">{formatCurrency(c.cpp)}</span>,
+  },
+  {
+    key: "landing_page_views",
+    label: "LPV",
+    render: (c) => <span className="text-right">{formatCompactNumber(c.landing_page_views)}</span>,
+  },
+  {
+    key: "video_views",
+    label: "Video Views",
+    render: (c) => <span className="text-right">{formatCompactNumber(c.video_views)}</span>,
+  },
+  {
+    key: "post_engagement_calculated",
+    label: "Engagement",
+    render: (c) => (
+      <span className="text-right">{formatCompactNumber(c.post_engagement_calculated)}</span>
+    ),
+  },
+  {
     key: "leads",
     label: "Leads",
-    render: (c) => <span className="text-right">{formatNumber(c.leads)}</span>,
+    render: (c) => <span className="text-right">{formatCompactNumber(c.leads)}</span>,
   },
   {
     key: "cost_per_lead",
@@ -54,12 +90,19 @@ const VISIBLE_COLUMNS: { key: SortKey; label: string; render?: (c: Campaign) => 
   {
     key: "purchases",
     label: "Purch.",
-    render: (c) => <span className="text-right">{formatNumber(c.purchases)}</span>,
+    render: (c) => <span className="text-right">{formatCompactNumber(c.purchases)}</span>,
   },
   {
     key: "cost_per_purchase",
-    label: "CP Purchase",
+    label: "CP Purch.",
     render: (c) => <span className="text-right">{formatCurrency(c.cost_per_purchase)}</span>,
+  },
+  {
+    key: "messaging_conversations",
+    label: "Msg",
+    render: (c) => (
+      <span className="text-right">{formatCompactNumber(c.messaging_conversations)}</span>
+    ),
   },
 ];
 
@@ -168,8 +211,11 @@ export default function CampaignTable({ campaigns, total }: CampaignTableProps) 
                 </td>
               </tr>
             ) : (
-              paginated.map((c) => (
-                <tr key={`${c.campaign_id}-${c.date_stop}`} className="border-b border-zinc-800/50 group">
+              paginated.map((c, i) => (
+                <tr
+                  key={`${c.campaign_id}-${c.date_stop}-${i}`}
+                  className="border-b border-zinc-800/50 group"
+                >
                   <td className="px-2 sm:px-3 py-2.5">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-white">{truncate(c.campaign_name, 30)}</span>

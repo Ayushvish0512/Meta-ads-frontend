@@ -61,7 +61,8 @@ export default function ActionBreakdown({ actions }: ActionBreakdownProps) {
   const filtered = actions
     .filter((a) => (hideNoise ? !NOISE.test(a.action_type) : true))
     .slice(0, 14)
-    .map((a) => ({
+    .map((a, i) => ({
+      key: `${a.action_type}-${i}`,
       action_type: a.action_type.length > 26 ? a.action_type.slice(0, 26) + "…" : a.action_type,
       full_name: a.action_type,
       value: Math.round(a.value),
@@ -118,9 +119,9 @@ export default function ActionBreakdown({ actions }: ActionBreakdownProps) {
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fillOpacity: 0.05 }} />
           <Bar dataKey="value" barSize={10} radius={[0, 4, 4, 0]}>
-            {filtered.map((entry, i) => (
+            {filtered.map((entry) => (
               <Cell
-                key={i}
+                key={entry.key}
                 fill={
                   /purchase|revenue|value|roas/.test(entry.full_name)
                     ? "#22c55e"

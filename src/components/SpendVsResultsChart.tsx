@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { formatCompactCurrency, truncate } from "@/lib/utils";
+import { formatCompactCurrency, shortenLabel } from "@/lib/utils";
 import type { CampaignRollup } from "@/types";
 
 interface SpendVsResultsChartProps {
@@ -69,8 +69,10 @@ export default function SpendVsResultsChart({ rollup }: SpendVsResultsChartProps
     );
   }
 
-  const data = rollup.map((c) => ({
-    name: truncate(c.campaign_name, 22),
+  const labels = rollup.map((c) => shortenLabel(c.campaign_name, 22));
+  const data = rollup.map((c, i) => ({
+    key: c.campaign_id,
+    name: labels[i],
     spend: c.spend,
     leads: c.leads,
     purchases: c.purchases,

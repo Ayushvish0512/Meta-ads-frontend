@@ -136,6 +136,27 @@ export function truncate(text: string | null | undefined, maxLength: number): st
   return text.substring(0, maxLength) + "...";
 }
 
+export function shortenLabel(
+  text: string | null | undefined,
+  maxLength = 22
+): string {
+  if (!text) return "";
+  if (text.length <= maxLength) return text;
+  const keepTail = 6;
+  const head = text.slice(0, maxLength - keepTail - 1);
+  const tail = text.slice(-keepTail);
+  return `${head}…${tail}`;
+}
+
+export function dedupeLabels(labels: string[]): string[] {
+  const seen = new Map<string, number>();
+  return labels.map((label) => {
+    const count = (seen.get(label) ?? 0) + 1;
+    seen.set(label, count);
+    return count === 1 ? label : `${label} (${count})`;
+  });
+}
+
 export function buildQueryString(params: Record<string, string | null>): string {
   const searchParams = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {

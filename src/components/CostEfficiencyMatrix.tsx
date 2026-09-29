@@ -12,7 +12,7 @@ import {
   CartesianGrid,
   Cell,
 } from "recharts";
-import { formatCurrency, formatPercent } from "@/lib/utils";
+import { formatCurrency, formatPercent, shortenLabel, dedupeLabels } from "@/lib/utils";
 import type { CampaignRollup } from "@/types";
 
 interface CostEfficiencyMatrixProps {
@@ -22,14 +22,17 @@ interface CostEfficiencyMatrixProps {
 type SortMode = "cpl" | "cpp" | "cpc";
 
 interface Point {
+  key: string;
   name: string;
+  fullName: string;
   cpc: number;
   cpl: number;
+  cpp: number;
   spend: number;
   leads: number;
 }
 
-const MODES: { key: SortMode; label: string; x: "cpl" | "cpp"; xLabel: string }[] = [
+const MODES: { key: SortMode; label: string; x: "cpl" | "cpp" | "cpc"; xLabel: string }[] = [
   { key: "cpl", label: "Best CPL", x: "cpl", xLabel: "Cost per Lead" },
   { key: "cpp", label: "Best CPP", x: "cpp", xLabel: "Cost per Post Click" },
   { key: "cpc", label: "Best CPC", x: "cpc", xLabel: "Cost per Click" },
@@ -45,7 +48,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   const point = payload[0].payload;
   return (
     <div className="p-3 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl max-w-[220px]">
-      <p className="text-xs font-medium text-white mb-2">{point.name}</p>
+      <p className="text-xs font-medium text-white mb-2">{point.fullName}</p>
       <div className="space-y-1">
         <Row label="CPC" value={formatCurrency(point.cpc)} />
         <Row label="CPL" value={formatCurrency(point.cpl)} />
@@ -79,7 +82,9 @@ export default function CostEfficiencyMatrix({ rollup }: CostEfficiencyMatrixPro
 
   const data: Point[] = rollup
     .map((c) => ({
-      name: c.campaign_name,
+      key: c.campaign_id,
+      name: shortenLabel(c.campaign_name, 20),
+      fullName: c.campaign_name,
       cpc: c.cpc,
       cpl: c.cost_per_lead,
       cpp: c.cpp,
@@ -87,14 +92,12 @@ export default function CostEfficiencyMatrix({ rollup }: CostEfficiencyMatrixPro
       leads: c.leads,
     }))
     .sort((a, b) => a[active.x] - b[active.x])
-    .slice(0, 10)
-    .map((p) => ({
-      name: p.name.length > 20 ? p.name.slice(0, 20) + "…" : p.name,
-      cpc: p.cpc,
-      cpl: p.cpl,
-      spend: p.spend,
-      leads: p.leads,
-    }));
+    .slice(0, 10);
+
+  const uniqueNames = dedupeLabels(data.map((d) => d.name));
+  data.forEach((d, i) => {
+    d.name = uniqueNames[i];
+  });
 
   const best = data[0]?.[active.x] ?? 0;
 
@@ -154,9 +157,9 @@ export default function CostEfficiencyMatrix({ rollup }: CostEfficiencyMatrixPro
             radius={[0, 4, 4, 0]}
             name={active.xLabel}
           >
-            {data.map((p, i) => (
+            {data.map((p) => (
               <Cell
-                key={i}
+                key={p.key}
                 fill={p[active.x] === best ? "#22c55e" : "#3b82f6"}
               />
             ))}

@@ -253,6 +253,29 @@ export interface DataHealthResponse {
   data_freshness_hours: number | null;
 }
 
+export interface LeaderboardEntry {
+  campaign_id: string;
+  campaign_name: string | null;
+  spend: number | null;
+  impressions: number | null;
+  reach: number | null;
+  clicks: number | null;
+  leads: number | null;
+  purchases: number | null;
+  ctr: number | null;
+  cpc: number | null;
+  cpm: number | null;
+  cost_per_lead: number | null;
+  lead_conversion_rate: number | null;
+  purchase_conversion_rate: number | null;
+  roas: number | null;
+}
+
+export interface LeaderboardResponse {
+  entries: LeaderboardEntry[];
+  total: number;
+}
+
 export interface CampaignSummaryResponse {
   summary: CampaignSummary;
 }

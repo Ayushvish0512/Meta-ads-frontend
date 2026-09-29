@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     const rows = stmt.all(...params) as Record<string, unknown>[];
 
-    const totals = rows.reduce(
+    const totals = rows.reduce<{ spend: number; leads: number }>(
       (acc, r) => ({
         spend: acc.spend + toNum(r.spend),
         leads: acc.leads + toNum(r.leads),

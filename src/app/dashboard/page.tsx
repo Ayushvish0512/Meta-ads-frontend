@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Header from "@/components/Header";
 import KPIGrid from "@/components/KPIGrid";
 import SpendVsResultsChart from "@/components/SpendVsResultsChart";
@@ -60,8 +60,11 @@ export default function DashboardPage() {
     return params.toString();
   }, [dateRange]);
 
+  const requestIdRef = useRef(0);
+
   const fetchData = useCallback(async () => {
     const params = buildParams();
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -93,6 +96,8 @@ export default function DashboardPage() {
         get(`/api/data/health?${params}`),
       ]);
 
+      if (requestId !== requestIdRef.current) return;
+
       setSummary(summaryRes);
       setCampaigns(campaignsRes.campaigns ?? []);
       setTotal(campaignsRes.total ?? 0);
@@ -105,14 +110,18 @@ export default function DashboardPage() {
       setRevenue(revenueRes);
       setHealth(healthRes);
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       setError(err instanceof Error ? err.message : "Failed to load data");
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
   }, [buildParams]);
 
   useEffect(() => {
-    void fetchData();
+    const frame = requestAnimationFrame(() => {
+      void fetchData();
+    });
+    return () => cancelAnimationFrame(frame);
   }, [fetchData]);
 
   const handleExportCSV = () => {
