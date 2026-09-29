@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, buildDateFilter } from "@/lib/db";
+import { SORTABLE_COLUMNS } from "@/lib/utils";
 import type { Campaign, CampaignsResponse } from "@/types";
 
 export async function GET(request: NextRequest) {
@@ -19,24 +20,14 @@ export async function GET(request: NextRequest) {
     const order =
       searchParams.get("order")?.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
-    const allowedSortColumns = [
-      "spend",
-      "impressions",
-      "reach",
-      "clicks",
-      "leads",
-      "purchases",
-      "ctr",
-      "cpc",
-      "cpm",
-      "cost_per_lead",
-      "cost_per_purchase",
+    const allowedSortColumns = new Set([
+      ...SORTABLE_COLUMNS,
       "date_start",
       "date_stop",
       "campaign_name",
-    ];
+    ]);
 
-    const safeSort = allowedSortColumns.includes(sortBy) ? sortBy : "spend";
+    const safeSort = allowedSortColumns.has(sortBy) ? sortBy : "spend";
 
     const db = getDb();
 

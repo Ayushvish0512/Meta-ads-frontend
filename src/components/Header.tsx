@@ -1,11 +1,12 @@
 "use client";
 
-import { Calendar, Download, RefreshCw } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import type { CampaignSummary } from "@/types";
+import type { DateRange } from "@/components/DateRangePicker";
 
 interface HeaderProps {
   summary: CampaignSummary | null;
-  dateRange: { start: string | null; end: string | null };
+  dateRange: DateRange;
   onExport: () => void;
   onRefresh: () => void;
 }
@@ -24,38 +25,39 @@ export default function Header({
   };
 
   return (
-    <header className="flex items-center justify-between px-6 py-4 bg-zinc-900 border-b border-zinc-800">
+    <header className="flex flex-col gap-3 sm:gap-0 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4 bg-zinc-900 border-b border-zinc-800">
       <div className="flex items-center gap-4">
         <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-600">
           <span className="text-xl font-bold text-white">M</span>
         </div>
         <div>
           <h1 className="text-xl font-semibold text-white">
-            Meta Ads Performance Intelligence
+            Meta Ads Intelligence
           </h1>
           <p className="text-sm text-zinc-500">
-            {summary?.campaign_count ?? 0} campaigns · {formatDateRange()}
+            {summary?.campaign_count ?? 0} campaigns · {summary?.total_leads?.toLocaleString("en-IN") ?? 0} leads · {formatDateRange()}
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-3">
+
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <button
           onClick={onRefresh}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-300 rounded-lg hover:bg-zinc-800 transition-colors"
+          className="inline-flex items-center gap-2 px-3 py-2 text-sm text-zinc-300 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors"
         >
           <RefreshCw size={16} />
-          Refresh
+          <span className="hidden sm:inline">Refresh</span>
         </button>
         <button
           onClick={onExport}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-300 rounded-lg hover:bg-zinc-800 transition-colors"
+          className="inline-flex items-center gap-2 px-3 py-2 text-sm text-zinc-300 bg-zinc-800 rounded-lg hover:bg-zinc-700 transition-colors"
         >
           <Download size={16} />
-          Export CSV
+          <span className="hidden sm:inline">Export CSV</span>
         </button>
-        <div className="flex items-center gap-2 px-3 py-2 text-sm text-zinc-300 bg-zinc-800 rounded-lg">
-          <Calendar size={16} />
-          <span>{formatDateRange()}</span>
+        <div className="inline-flex items-center gap-2 px-3 py-2 text-sm text-zinc-300 bg-zinc-800 rounded-lg">
+          <span className="hidden sm:inline">{formatDateRange()}</span>
+          <span className="sm:hidden text-xs">{dateRange.label}</span>
         </div>
       </div>
     </header>

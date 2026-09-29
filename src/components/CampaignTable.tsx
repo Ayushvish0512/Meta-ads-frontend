@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Search, ArrowUpDown, ExternalLink } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, ArrowUpDown } from "lucide-react";
 import type { Campaign } from "@/types";
 import { formatCurrency, formatNumber, formatPercent, truncate } from "@/lib/utils";
 
@@ -135,14 +135,14 @@ export default function CampaignTable({ campaigns, total }: CampaignTableProps) 
         </div>
       </div>
 
-      <div className="overflow-x-auto flex-1">
-        <table className="w-full text-sm">
-          <thead>
+      <div className="overflow-x-auto flex-1 [-webkit-overflow-scrolling:touch]">
+        <table className="w-full text-xs sm:text-sm whitespace-nowrap">
+          <thead className="sticky top-0 bg-zinc-950 z-20">
             <tr className="border-b border-zinc-800">
               {VISIBLE_COLUMNS.map((col) => (
                 <th
                   key={String(col.key)}
-                  className="px-3 py-2 text-left text-xs font-medium text-zinc-500 uppercase cursor-pointer hover:text-zinc-300"
+                  className="px-2 sm:px-3 py-2 text-left text-xs font-medium text-zinc-500 uppercase cursor-pointer hover:text-zinc-300"
                   onClick={() => col.key !== "campaign_name" && col.key !== "date_stop" && handleSort(col.key)}
                 >
                   <div className="flex items-center gap-1">
@@ -170,17 +170,17 @@ export default function CampaignTable({ campaigns, total }: CampaignTableProps) 
             ) : (
               paginated.map((c) => (
                 <tr key={`${c.campaign_id}-${c.date_stop}`} className="border-b border-zinc-800/50 group">
-                  <td className="px-3 py-2.5">
+                  <td className="px-2 sm:px-3 py-2.5">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-white">{truncate(c.campaign_name, 35)}</span>
+                      <span className="font-medium text-white">{truncate(c.campaign_name, 30)}</span>
                       {c.campaign_id && (
                         <span className="text-xs text-zinc-600">#{truncate(c.campaign_id, 10)}</span>
                       )}
                     </div>
                   </td>
                   {VISIBLE_COLUMNS.slice(1).map((col) => (
-                    <td key={col.key} className="px-3 py-2.5 text-zinc-400">
-                      {col.render ? col.render(c) : truncate(String(c[col.key] ?? ""), 20)}
+                    <td key={col.key} className="px-2 sm:px-3 py-2.5 text-zinc-400">
+                      {col.render ? col.render(c) : truncate(String(c[col.key] ?? ""), 18)}
                     </td>
                   ))}
                 </tr>
