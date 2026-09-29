@@ -7,6 +7,7 @@ import { formatCompactNumber, formatPercent } from "@/lib/utils";
 interface FunnelChartProps {
   funnel: FunnelData | null;
   rates?: Record<string, number> | null;
+  loading?: boolean;
 }
 
 const STAGE_COLORS: Record<string, string> = {
@@ -18,8 +19,12 @@ const STAGE_COLORS: Record<string, string> = {
   Purchases: "from-cyan-600 to-cyan-500",
 };
 
-export default function FunnelChart({ funnel, rates }: FunnelChartProps) {
-  if (!funnel) {
+export default function FunnelChart({
+  funnel,
+  rates,
+  loading = false,
+}: FunnelChartProps) {
+  if (loading || !funnel) {
     return (
       <div className="space-y-2 animate-pulse">
         {Array.from({ length: 6 }).map((_, i) => (

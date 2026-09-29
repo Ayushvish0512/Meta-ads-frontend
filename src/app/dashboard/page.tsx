@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
 import Header from "@/components/Header";
 import KPIGrid from "@/components/KPIGrid";
 import SpendVsResultsChart from "@/components/SpendVsResultsChart";
@@ -10,162 +9,34 @@ import CostEfficiencyMatrix, {
 import FunnelChart from "@/components/FunnelChart";
 import ActionBreakdown from "@/components/ActionBreakdown";
 import CampaignTable from "@/components/CampaignTable";
-import DateRangePicker, { DateRange } from "@/components/DateRangePicker";
+import DateRangePicker from "@/components/DateRangePicker";
 import DailyTrendsChart from "@/components/DailyTrendsChart";
 import EngagementAnalytics from "@/components/EngagementAnalytics";
 import RevenueAnalytics from "@/components/RevenueAnalytics";
 import DataHealth from "@/components/DataHealth";
 import CampaignShareChart from "@/components/CampaignShareChart";
 import { Section } from "@/components/Section";
+import { useDashboardData } from "@/hooks/useDashboardData";
 import { fetchAndExportCSV } from "@/lib/csv-export";
-import type {
-  CampaignSummary,
-  Campaign,
-  CampaignRollup,
-  TrendPoint,
-  FunnelData,
-  ActionAggregation,
-  EngagementResponse,
-  RevenueSummary,
-  DataHealthResponse,
-} from "@/types";
-
-const DEFAULT_DATE_RANGE: DateRange = {
-  start: null,
-  end: null,
-  label: "All Time",
-};
 
 export default function DashboardPage() {
-  const [dateRange, setDateRange] = useState<DateRange>(DEFAULT_DATE_RANGE);
+  const {
+    data,
+    dateRange,
+    loading,
+    error,
+    fatal,
+    setDateRange,
+    refresh,
+  } = useDashboardData();
 
-  const [summary, setSummary] = useState<CampaignSummary | null>(null);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [total, setTotal] = useState(0);
-  const [rollup, setRollup] = useState<CampaignRollup[]>([]);
-  const [trends, setTrends] = useState<TrendPoint[]>([]);
-  const [funnel, setFunnel] = useState<FunnelData | null>(null);
-  const [funnelRates, setFunnelRates] = useState<Record<string, number> | null>(null);
-  const [actions, setActions] = useState<ActionAggregation[]>([]);
-  const [engagement, setEngagement] = useState<EngagementResponse | null>(null);
-  const [revenue, setRevenue] = useState<RevenueSummary | null>(null);
-  const [health, setHealth] = useState<DataHealthResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const buildParams = useCallback(() => {
-    const params = new URLSearchParams();
-    if (dateRange.start) params.set("date_start", dateRange.start);
-    if (dateRange.end) params.set("date_stop", dateRange.end);
-    return params.toString();
-  }, [dateRange]);
-
-  const requestIdRef = useRef(0);
-
-  const fetchData = useCallback(async () => {
-    const params = buildParams();
-    const requestId = ++requestIdRef.current;
-    setLoading(true);
-    setError(null);
-    try {
-      const get = (url: string) =>
-        fetch(url).then((r) => {
-          if (!r.ok) throw new Error(`${url} failed (${r.status})`);
-          return r.json();
-        });
-
-      const [
-        summaryRes,
-        campaignsRes,
-        rollupRes,
-        trendsRes,
-        funnelRes,
-        actionsRes,
-        engagementRes,
-        revenueRes,
-        healthRes,
-      ] = await Promise.all([
-        get(`/api/campaigns/summary?${params}`),
-        get(`/api/campaigns?${params}&page=1&page_size=1000`),
-        get(`/api/campaigns/rollup?${params}`),
-        get(`/api/campaigns/trends?${params}`),
-        get(`/api/campaigns/funnel?${params}`),
-        get(`/api/campaigns/actions?${params}&top_n=20`),
-        get(`/api/campaigns/engagement?${params}`),
-        get(`/api/campaigns/revenue?${params}`),
-        get(`/api/data/health?${params}`),
-      ]);
-
-      if (requestId !== requestIdRef.current) return;
-
-      setSummary(summaryRes);
-      setCampaigns(campaignsRes.campaigns ?? []);
-      setTotal(campaignsRes.total ?? 0);
-      setRollup(rollupRes.rollup ?? []);
-      setTrends(trendsRes.trends ?? []);
-      setFunnel(funnelRes.funnel ?? null);
-      setFunnelRates(funnelRes.rates ?? null);
-      setActions(actionsRes.actions ?? []);
-      setEngagement(engagementRes);
-      setRevenue(revenueRes);
-      setHealth(healthRes);
-    } catch (err) {
-      if (requestId !== requestIdRef.current) return;
-      setError(err instanceof Error ? err.message : "Failed to load data");
-    } finally {
-      if (requestId === requestIdRef.current) setLoading(false);
-    }
-  }, [buildParams]);
-
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      void fetchData();
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [fetchData]);
-
-  const handleExportCSV = () => {
-    void fetchAndExportCSV(dateRange.start, dateRange.end);
-  };
-
-  const handleRefresh = () => {
-    void fetchData();
-  };
-
-  if (loading && !summary && campaigns.length === 0) {
-    return (
-      <div className="min-h-screen bg-black">
-        <Header
-          summary={null}
-          dateRange={dateRange}
-          onExport={handleExportCSV}
-          onRefresh={handleRefresh}
-        />
-        <div className="p-4 sm:p-6 space-y-6">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div
-                key={i}
-                className="p-4 bg-zinc-900 rounded-xl border border-zinc-800 animate-pulse"
-              >
-                <div className="h-3 bg-zinc-800 rounded mb-2 w-2/3" />
-                <div className="h-6 bg-zinc-800 rounded w-3/4" />
-              </div>
-            ))}
-          </div>
-          <div className="h-80 bg-zinc-900 rounded-xl border border-zinc-800 animate-pulse" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
+  if (fatal) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-6">
         <div className="text-center">
-          <p className="text-red-400 mb-4">Error: {error}</p>
+          <p className="text-red-400 mb-4">Error: {fatal}</p>
           <button
-            onClick={handleRefresh}
+            onClick={refresh}
             className="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700"
           >
             Retry
@@ -175,13 +46,19 @@ export default function DashboardPage() {
     );
   }
 
+  const bootstrapping = dateRange === null;
+
   return (
     <div className="min-h-screen bg-black text-zinc-100">
       <Header
-        summary={summary}
-        dateRange={dateRange}
-        onExport={handleExportCSV}
-        onRefresh={handleRefresh}
+        summary={data.summary}
+        dateRange={dateRange ?? { start: null, end: null, label: "Loading…" }}
+        onExport={() => {
+          if (dateRange) {
+            void fetchAndExportCSV(dateRange.start, dateRange.end);
+          }
+        }}
+        onRefresh={refresh}
       />
 
       <main className="p-4 sm:p-6 space-y-6 max-w-[1800px] mx-auto">
@@ -191,28 +68,50 @@ export default function DashboardPage() {
               Performance Overview
             </h2>
             <p className="text-xs text-zinc-500 mt-0.5">
-              {summary
-                ? `${summary.row_count} daily records · ${summary.campaign_count} campaigns · ${summary.date_range_start} to ${summary.date_range_end}`
-                : ""}
+              {data.summary
+                ? `${data.summary.row_count} daily records · ${data.summary.campaign_count} campaigns · ${data.summary.date_range_start} to ${data.summary.date_range_end}`
+                : "Loading headline metrics…"}
             </p>
           </div>
-          <DateRangePicker value={dateRange} onChange={setDateRange} />
+          {bootstrapping ? (
+            <div className="h-9 w-32 bg-zinc-800 rounded-lg animate-pulse" />
+          ) : (
+            <DateRangePicker
+              value={dateRange}
+              onChange={setDateRange}
+              maxDate={data.health?.dataset_last_date ?? null}
+              minDate={data.health?.dataset_first_date ?? null}
+            />
+          )}
         </div>
 
-        <KPIGrid summary={summary} />
+        {error && (
+          <div className="px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-red-300">
+            {error}
+          </div>
+        )}
+
+        <KPIGrid summary={data.summary} />
+
+        <Section
+          title="Spend vs Results by Campaign"
+          subtitle={
+            data.rollup.length > 0
+              ? `Aggregated across ${data.rollup.length} campaigns in range`
+              : "Aggregated across campaigns in range"
+          }
+        >
+          <SpendVsResultsChart
+            rollup={data.rollup}
+            loading={loading.has("rollup")}
+          />
+        </Section>
 
         <Section
           title="Daily Performance Trends"
           subtitle="Switch views to compare spend, results, efficiency, and cumulative burn"
         >
-          <DailyTrendsChart trends={trends} />
-        </Section>
-
-        <Section
-          title="Spend vs Results by Campaign"
-          subtitle={`Aggregated across ${rollup.length} campaigns in range`}
-        >
-          <SpendVsResultsChart rollup={rollup} />
+          <DailyTrendsChart trends={data.trends} loading={loading.has("trends")} />
         </Section>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
@@ -221,15 +120,19 @@ export default function DashboardPage() {
               title="Conversion Funnel"
               subtitle="Stage-to-stage drop-off with blended rates"
             >
-              <FunnelChart funnel={funnel} rates={funnelRates} />
+              <FunnelChart
+                funnel={data.funnel}
+                rates={data.funnelRates}
+                loading={loading.has("funnel")}
+              />
             </Section>
           </div>
           <div className="xl:col-span-1">
-            <Section
-              title="Spend Concentration"
-              subtitle="Where the budget is going"
-            >
-              <CampaignShareChart rollup={rollup} />
+            <Section title="Spend Concentration" subtitle="Where the budget is going">
+              <CampaignShareChart
+                rollup={data.rollup}
+                loading={loading.has("rollup")}
+              />
             </Section>
           </div>
         </div>
@@ -238,14 +141,20 @@ export default function DashboardPage() {
           title="Engagement Analytics"
           subtitle="Video, post engagement, landing pages, and messaging efficiency"
         >
-          <EngagementAnalytics engagement={engagement} />
+          <EngagementAnalytics
+            engagement={data.engagement}
+            loading={loading.has("engagement")}
+          />
         </Section>
 
         <Section
           title="Revenue & ROAS"
           subtitle="Attributed conversion value from Meta action values"
         >
-          <RevenueAnalytics revenue={revenue} />
+          <RevenueAnalytics
+            revenue={data.revenue}
+            loading={loading.has("revenue")}
+          />
         </Section>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -253,13 +162,19 @@ export default function DashboardPage() {
             title="Cost Efficiency Matrix"
             subtitle="Ranked campaigns by cost efficiency (green = best)"
           >
-            <CostEfficiencyMatrix rollup={rollup} />
+            <CostEfficiencyMatrix
+              rollup={data.rollup}
+              loading={loading.has("rollup")}
+            />
           </Section>
           <Section
             title="Lead Generation Leaderboard"
             subtitle="Best cost per lead, lowest first"
           >
-            <CostEfficiencyTable rollup={rollup} />
+            <CostEfficiencyTable
+              rollup={data.rollup}
+              loading={loading.has("rollup")}
+            />
           </Section>
         </div>
 
@@ -267,21 +182,27 @@ export default function DashboardPage() {
           title="Action Type Breakdown"
           subtitle="Aggregated Meta action counts across all campaigns in range"
         >
-          <ActionBreakdown actions={actions} />
+          <ActionBreakdown actions={data.actions} loading={loading.has("actions")} />
         </Section>
 
         <Section
           title="Data Pipeline Health"
           subtitle="Row coverage, date span, and recent Meta API syncs"
         >
-          <DataHealth health={health} />
+          <DataHealth health={data.health} loading={loading.has("health")} />
         </Section>
 
         <Section
           title="Daily Campaign Records"
-          subtitle={`${total} rows in range`}
+          subtitle={
+            data.total > 0 ? `${data.total} rows in range` : "Rows in range"
+          }
         >
-          <CampaignTable campaigns={campaigns} total={total} />
+          <CampaignTable
+            campaigns={data.campaigns}
+            total={data.total}
+            loading={loading.has("campaigns")}
+          />
         </Section>
       </main>
     </div>

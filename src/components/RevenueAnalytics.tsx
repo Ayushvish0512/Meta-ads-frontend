@@ -12,10 +12,14 @@ import type { RevenueSummary } from "@/types";
 
 interface RevenueAnalyticsProps {
   revenue: RevenueSummary | null;
+  loading?: boolean;
 }
 
-export default function RevenueAnalytics({ revenue }: RevenueAnalyticsProps) {
-  if (!revenue) {
+export default function RevenueAnalytics({
+  revenue,
+  loading = false,
+}: RevenueAnalyticsProps) {
+  if (loading || !revenue) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-pulse">
         {Array.from({ length: 4 }).map((_, i) => (

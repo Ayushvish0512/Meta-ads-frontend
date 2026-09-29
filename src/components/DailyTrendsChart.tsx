@@ -20,10 +20,12 @@ import {
   formatCompactNumber,
   formatCurrency,
 } from "@/lib/utils";
+import { ChartSkeleton } from "@/components/Skeleton";
 import type { TrendPoint } from "@/types";
 
 interface DailyTrendsChartProps {
   trends: TrendPoint[];
+  loading?: boolean;
 }
 
 type View = "spend" | "results" | "efficiency" | "cumulative";
@@ -83,8 +85,15 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   );
 };
 
-export default function DailyTrendsChart({ trends }: DailyTrendsChartProps) {
+export default function DailyTrendsChart({
+  trends,
+  loading = false,
+}: DailyTrendsChartProps) {
   const [view, setView] = useState<View>("spend");
+
+  if (loading) {
+    return <ChartSkeleton height={340} label="Loading daily trends…" />;
+  }
 
   if (!trends || trends.length === 0) {
     return (

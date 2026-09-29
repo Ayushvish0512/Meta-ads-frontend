@@ -12,10 +12,12 @@ import {
   Cell,
 } from "recharts";
 import { formatCompactNumber } from "@/lib/utils";
+import { ChartSkeleton } from "@/components/Skeleton";
 import type { ActionAggregation } from "@/types";
 
 interface ActionBreakdownProps {
   actions: ActionAggregation[];
+  loading?: boolean;
 }
 
 const NOISE = /^(post$|post_engagement$|page_engagement$|post_interaction_net$)/;
@@ -45,8 +47,12 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   );
 };
 
-export default function ActionBreakdown({ actions }: ActionBreakdownProps) {
+export default function ActionBreakdown({ actions, loading = false }: ActionBreakdownProps) {
   const [hideNoise, setHideNoise] = useState(true);
+
+  if (loading) {
+    return <ChartSkeleton height={300} label="Aggregating action types…" />;
+  }
 
   if (!actions || actions.length === 0) {
     return (

@@ -9,10 +9,12 @@ import {
   formatPercent,
   truncate,
 } from "@/lib/utils";
+import { TableSkeleton } from "@/components/Skeleton";
 
 interface CampaignTableProps {
   campaigns: Campaign[];
   total: number;
+  loading?: boolean;
 }
 
 type SortKey = keyof Campaign;
@@ -106,7 +108,11 @@ const VISIBLE_COLUMNS: {
   },
 ];
 
-export default function CampaignTable({ campaigns, total }: CampaignTableProps) {
+export default function CampaignTable({
+  campaigns,
+  total,
+  loading = false,
+}: CampaignTableProps) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("spend");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
@@ -150,6 +156,10 @@ export default function CampaignTable({ campaigns, total }: CampaignTableProps) 
   }, [filteredSorted, page]);
 
   const totalPages = Math.ceil(filteredSorted.length / pageSize);
+
+  if (loading && filteredSorted.length === 0) {
+    return <TableSkeleton rows={8} cols={9} />;
+  }
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {

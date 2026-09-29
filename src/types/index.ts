@@ -247,6 +247,8 @@ export interface DataHealthResponse {
   raw_insights_rows: number;
   first_date: string | null;
   last_date: string | null;
+  dataset_first_date: string | null;
+  dataset_last_date: string | null;
   distinct_dates: number;
   last_sync: SyncRun | null;
   recent_syncs: SyncRun[];

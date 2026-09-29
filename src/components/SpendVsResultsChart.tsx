@@ -13,10 +13,12 @@ import {
   CartesianGrid,
 } from "recharts";
 import { formatCompactCurrency, shortenLabel } from "@/lib/utils";
+import { ChartSkeleton } from "@/components/Skeleton";
 import type { CampaignRollup } from "@/types";
 
 interface SpendVsResultsChartProps {
   rollup: CampaignRollup[];
+  loading?: boolean;
 }
 
 type MetricKey = "leads" | "purchases";
@@ -58,8 +60,15 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   );
 };
 
-export default function SpendVsResultsChart({ rollup }: SpendVsResultsChartProps) {
+export default function SpendVsResultsChart({
+  rollup,
+  loading = false,
+}: SpendVsResultsChartProps) {
   const [metric, setMetric] = useState<MetricKey>("leads");
+
+  if (loading) {
+    return <ChartSkeleton height={340} label="Loading campaign performance…" />;
+  }
 
   if (!rollup || rollup.length === 0) {
     return (

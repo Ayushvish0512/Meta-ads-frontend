@@ -7,10 +7,12 @@ import {
   shortenLabel,
   dedupeLabels,
 } from "@/lib/utils";
+import { ChartSkeleton } from "@/components/Skeleton";
 import type { CampaignRollup } from "@/types";
 
 interface CampaignShareChartProps {
   rollup: CampaignRollup[];
+  loading?: boolean;
 }
 
 const COLORS = [
@@ -54,7 +56,14 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   );
 }
 
-export default function CampaignShareChart({ rollup }: CampaignShareChartProps) {
+export default function CampaignShareChart({
+  rollup,
+  loading = false,
+}: CampaignShareChartProps) {
+  if (loading) {
+    return <ChartSkeleton height={280} label="Loading spend split…" />;
+  }
+
   if (!rollup || rollup.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-zinc-500 text-sm">

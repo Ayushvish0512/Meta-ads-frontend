@@ -1,7 +1,7 @@
 "use client";
 
-import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
-import { Calendar } from "lucide-react";
+import { format, subDays, startOfMonth } from "date-fns";
+import { Calendar, Check, Database } from "lucide-react";
 import { useState } from "react";
 
 export type DateRange = {
@@ -13,51 +13,70 @@ export type DateRange = {
 interface DateRangePickerProps {
   value: DateRange;
   onChange: (range: DateRange) => void;
+  /** Latest date that actually has data. Presets anchor to this, not today. */
+  maxDate?: string | null;
+  /** Earliest date that has data. */
+  minDate?: string | null;
 }
 
-function getDateRange(daysAgo: number): { start: string; end: string } {
-  const end = new Date();
-  const start = subDays(end, daysAgo);
+function toDate(value: string | null | undefined, fallback: Date): Date {
+  if (!value) return fallback;
+  const parsed = new Date(`${value}T00:00:00`);
+  return isNaN(parsed.getTime()) ? fallback : parsed;
+}
+
+/** Inclusive end date for a "last N days" window. */
+function windowFor(anchor: Date, days: number): { start: string; end: string } {
   return {
-    start: format(start, "yyyy-MM-dd"),
-    end: format(end, "yyyy-MM-dd"),
+    start: format(subDays(anchor, days - 1), "yyyy-MM-dd"),
+    end: format(anchor, "yyyy-MM-dd"),
   };
 }
 
-function getMonthToDate(): { start: string; end: string } {
-  const now = new Date();
-  return {
-    start: format(startOfMonth(now), "yyyy-MM-dd"),
-    end: format(endOfMonth(now), "yyyy-MM-dd"),
-  };
-}
-
-function getLastNDaysOptions(): { label: string; start: string; end: string }[] {
-  return [
-    { label: "Last 7 Days", ...getDateRange(7) },
-    { label: "Last 14 Days", ...getDateRange(14) },
-    { label: "Last 30 Days", ...getDateRange(30) },
-    { label: "Last 60 Days", ...getDateRange(60) },
-    { label: "Last 90 Days", ...getDateRange(90) },
-    { label: "Month to Date", ...getMonthToDate() },
-  ];
-}
-
-export default function DateRangePicker({ value, onChange }: DateRangePickerProps) {
+export default function DateRangePicker({
+  value,
+  onChange,
+  maxDate,
+  minDate,
+}: DateRangePickerProps) {
   const [showCustom, setShowCustom] = useState(false);
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
 
-  const handlePreset = (range: { start: string | null; end: string | null }, label: string) => {
-    onChange({ start: range.start, end: range.end, label });
+  // Anchor every preset to the newest date present in the database.
+  // Falling back to today only happens when the database is empty.
+  const anchor = toDate(maxDate, new Date());
+  const floor = toDate(minDate, anchor);
+
+  const presets: { label: string; start: string; end: string }[] = [
+    { label: "Last 7 Days", ...windowFor(anchor, 7) },
+    { label: "Last 14 Days", ...windowFor(anchor, 14) },
+    { label: "Last 30 Days", ...windowFor(anchor, 30) },
+    { label: "Last 60 Days", ...windowFor(anchor, 60) },
+    {
+      label: "Month to Date",
+      start: format(startOfMonth(anchor), "yyyy-MM-dd"),
+      end: format(anchor, "yyyy-MM-dd"),
+    },
+    {
+      label: "All Time",
+      start: format(floor, "yyyy-MM-dd"),
+      end: format(anchor, "yyyy-MM-dd"),
+    },
+  ];
+
+  const handlePreset = (preset: (typeof presets)[number]) => {
+    onChange({ start: preset.start, end: preset.end, label: preset.label });
     setShowCustom(false);
   };
 
   const handleCustomApply = () => {
+    const start = customStart || null;
+    const end = customEnd || null;
     onChange({
-      start: customStart || null,
-      end: customEnd || null,
-      label: customStart && customEnd ? `${customStart} → ${customEnd}` : "Custom",
+      start,
+      end,
+      label: start && end ? `${start} → ${end}` : start ? `From ${start}` : end ? `Until ${end}` : "Custom",
     });
     setShowCustom(false);
   };
@@ -78,40 +97,60 @@ export default function DateRangePicker({ value, onChange }: DateRangePickerProp
             className="fixed inset-0 z-10"
             onClick={() => setShowCustom(false)}
           />
-          <div className="absolute left-0 z-20 w-56 mt-2 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl">
+          <div className="absolute right-0 z-20 w-64 mt-2 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl">
+            {maxDate && (
+              <div className="flex items-center gap-1.5 px-3 py-2 text-[11px] text-zinc-500 border-b border-zinc-800">
+                <Database size={11} />
+                <span>
+                  Data through{" "}
+                  <span className="text-zinc-400">{maxDate}</span>
+                </span>
+              </div>
+            )}
+
             <div className="p-2 text-xs font-medium text-zinc-500 uppercase">
               Presets
             </div>
             <div className="py-1">
-              {getLastNDaysOptions().map((opt) => (
-                <button
-                  key={opt.label}
-                  onClick={() => handlePreset({ start: opt.start, end: opt.end }, opt.label)}
-                  className="w-full px-3 py-2 text-sm text-left text-zinc-300 hover:bg-zinc-800 transition-colors"
-                >
-                  {opt.label}
-                </button>
-              ))}
-              <button
-                onClick={() => handlePreset({ start: null, end: null }, "All Time")}
-                className="w-full px-3 py-2 text-sm text-left text-zinc-300 hover:bg-zinc-800 transition-colors"
-              >
-                All Time
-              </button>
+              {presets.map((preset) => {
+                const active =
+                  value.start === preset.start && value.end === preset.end;
+                return (
+                  <button
+                    key={preset.label}
+                    onClick={() => handlePreset(preset)}
+                    className="w-full px-3 py-2 text-sm text-left text-zinc-300 hover:bg-zinc-800 transition-colors flex items-center justify-between gap-2"
+                  >
+                    <span>{preset.label}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-[10px] text-zinc-600">
+                        {preset.start.slice(5)} → {preset.end.slice(5)}
+                      </span>
+                      {active && <Check size={12} className="text-blue-400" />}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="border-t border-zinc-800">
               <div className="p-3">
-                <div className="mb-2 text-xs font-medium text-zinc-500">Custom Range</div>
+                <div className="mb-2 text-xs font-medium text-zinc-500">
+                  Custom Range
+                </div>
                 <input
                   type="date"
                   value={customStart}
+                  min={minDate ?? undefined}
+                  max={maxDate ?? undefined}
                   onChange={(e) => setCustomStart(e.target.value)}
                   className="w-full px-2 py-1.5 mb-2 text-xs text-zinc-300 bg-zinc-800 rounded border border-zinc-700 focus:outline-none focus:border-blue-600"
                 />
                 <input
                   type="date"
                   value={customEnd}
+                  min={minDate ?? undefined}
+                  max={maxDate ?? undefined}
                   onChange={(e) => setCustomEnd(e.target.value)}
                   className="w-full px-2 py-1.5 mb-2 text-xs text-zinc-300 bg-zinc-800 rounded border border-zinc-700 focus:outline-none focus:border-blue-600"
                 />

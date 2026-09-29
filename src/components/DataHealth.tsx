@@ -19,6 +19,7 @@ import type { DataHealthResponse } from "@/types";
 
 interface DataHealthProps {
   health: DataHealthResponse | null;
+  loading?: boolean;
 }
 
 function StatusIcon({ status }: { status: string }) {
@@ -29,8 +30,8 @@ function StatusIcon({ status }: { status: string }) {
   return <Clock size={12} className="text-zinc-500" />;
 }
 
-export default function DataHealth({ health }: DataHealthProps) {
-  if (!health) {
+export default function DataHealth({ health, loading = false }: DataHealthProps) {
+  if (loading || !health) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-pulse">
         {Array.from({ length: 4 }).map((_, i) => (

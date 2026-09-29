@@ -21,6 +21,14 @@ export async function GET(request: NextRequest) {
     `);
     const stats = statsStmt.get(...params) as Record<string, unknown>;
 
+    // Unfiltered bounds: the date picker anchors its presets to these so
+    // "last 7 days" means the last 7 days that actually contain data.
+    const boundsStmt = db.prepare(`
+      SELECT MIN(date_start) AS first_date, MAX(date_stop) AS last_date
+      FROM campaigns
+    `);
+    const bounds = boundsStmt.get() as Record<string, unknown>;
+
     let rawInsightsRows = 0;
     try {
       const rawStmt = db.prepare("SELECT COUNT(*) AS c FROM raw_insights");
@@ -59,6 +67,8 @@ export async function GET(request: NextRequest) {
       raw_insights_rows: rawInsightsRows,
       first_date: (stats.first_date as string) || null,
       last_date: (stats.last_date as string) || null,
+      dataset_first_date: (bounds.first_date as string) || null,
+      dataset_last_date: (bounds.last_date as string) || null,
       distinct_dates: toNum(stats.distinct_dates),
       last_sync: lastSync,
       recent_syncs: syncs,

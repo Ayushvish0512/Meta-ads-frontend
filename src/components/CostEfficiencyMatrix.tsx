@@ -13,10 +13,12 @@ import {
   Cell,
 } from "recharts";
 import { formatCurrency, formatPercent, shortenLabel, dedupeLabels } from "@/lib/utils";
+import { ChartSkeleton, TableSkeleton } from "@/components/Skeleton";
 import type { CampaignRollup } from "@/types";
 
 interface CostEfficiencyMatrixProps {
   rollup: CampaignRollup[];
+  loading?: boolean;
 }
 
 type SortMode = "cpl" | "cpp" | "cpc";
@@ -68,9 +70,16 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function CostEfficiencyMatrix({ rollup }: CostEfficiencyMatrixProps) {
+export default function CostEfficiencyMatrix({
+  rollup,
+  loading = false,
+}: CostEfficiencyMatrixProps) {
   const [mode, setMode] = useState<SortMode>("cpl");
   const active = MODES.find((m) => m.key === mode) ?? MODES[0];
+
+  if (loading) {
+    return <ChartSkeleton height={280} label="Ranking campaigns…" />;
+  }
 
   if (!rollup || rollup.length === 0) {
     return (
@@ -173,7 +182,17 @@ export default function CostEfficiencyMatrix({ rollup }: CostEfficiencyMatrixPro
   );
 }
 
-export function CostEfficiencyTable({ rollup }: { rollup: CampaignRollup[] }) {
+export function CostEfficiencyTable({
+  rollup,
+  loading = false,
+}: {
+  rollup: CampaignRollup[];
+  loading?: boolean;
+}) {
+  if (loading) {
+    return <TableSkeleton rows={6} cols={6} />;
+  }
+
   if (!rollup || rollup.length === 0) {
     return <p className="text-sm text-zinc-500">No data</p>;
   }

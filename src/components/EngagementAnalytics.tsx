@@ -10,6 +10,7 @@ import type { EngagementResponse } from "@/types";
 
 interface EngagementAnalyticsProps {
   engagement: EngagementResponse | null;
+  loading?: boolean;
 }
 
 const BUCKET_STYLES: Record<string, { bar: string; icon: React.ReactNode }> = {
@@ -49,8 +50,11 @@ function StatTile({
   );
 }
 
-export default function EngagementAnalytics({ engagement }: EngagementAnalyticsProps) {
-  if (!engagement) {
+export default function EngagementAnalytics({
+  engagement,
+  loading = false,
+}: EngagementAnalyticsProps) {
+  if (loading || !engagement) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-pulse">
         {Array.from({ length: 4 }).map((_, i) => (
